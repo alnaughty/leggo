@@ -2,6 +2,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LocationService {
+  final GeolocatorPlatform _geolocatorPlatform = GeolocatorPlatform.instance;
   // Request location permission
   Future<void> requestPermission() async {
     var status = await Permission.location.status;
@@ -13,13 +14,15 @@ class LocationService {
     }
 
     if (status.isPermanentlyDenied) {
-      throw Exception('Location permission permanently denied. Please enable it in settings.');
+      throw Exception(
+        'Location permission permanently denied. Please enable it in settings.',
+      );
     }
   }
 
   // Check if location service is enabled
   Future<void> checkServiceEnabled() async {
-    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    final serviceEnabled = await _geolocatorPlatform.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw Exception('Location services are disabled.');
     }
@@ -30,20 +33,20 @@ class LocationService {
     await requestPermission();
     await checkServiceEnabled();
 
-    return await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
+    return await _geolocatorPlatform.getCurrentPosition(
+      locationSettings: AndroidSettings(accuracy: LocationAccuracy.high),
     );
   }
 
   // Stream location updates safely
   Stream<Position> getLocationStream({
     LocationAccuracy accuracy = LocationAccuracy.high,
-    int distanceFilter = 10,
+    int distanceFilter = 2,
   }) async* {
     await requestPermission();
     await checkServiceEnabled();
 
-    yield* Geolocator.getPositionStream(
+    yield* _geolocatorPlatform.getPositionStream(
       locationSettings: LocationSettings(
         accuracy: accuracy,
         distanceFilter: distanceFilter,
