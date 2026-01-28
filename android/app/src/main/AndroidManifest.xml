@@ -6,7 +6,7 @@
 
    
    <application
-        android:label="Leggo"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:allowBackup="true"
         android:fullBackupContent="@xml/no_backup"

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:leggo/core/utils/flavors.dart';
 import 'package:leggo/leggo.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
-  runApp(ProviderScope(child: const Leggo()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   const flavorString = String.fromEnvironment('FLAVOR');
+  final bool hasEnv = bool.hasEnvironment("FLAVOR");
+  print("CHECK HAS FLAVOR : $hasEnv");
   switch (flavorString) {
     case 'dev':
       F.current = Flavor.dev;
@@ -17,4 +21,12 @@ void main() {
     default:
       F.current = Flavor.prod;
   }
+  final envFile = switch (F.current) {
+    Flavor.dev => '.env.dev',
+    Flavor.staging => '.env.staging',
+    _ => '.env',
+  };
+  print("FLAVOR : $flavorString");
+  await dotenv.load(fileName: envFile);
+  runApp(ProviderScope(child: const Leggo()));
 }

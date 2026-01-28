@@ -1,3 +1,5 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 enum Flavor { dev, staging, prod }
 
 class F {
@@ -8,13 +10,10 @@ class F {
   static bool get isProd => current == Flavor.prod;
 
   static String get baseUrl {
-    switch (current) {
-      case Flavor.dev:
-        return 'https://dev-api.example.com';
-      case Flavor.staging:
-        return 'https://staging-api.example.com';
-      case Flavor.prod:
-        return 'https://api.example.com';
-    }
+    return dotenv.env['BASE_DOMAIN'] ?? "";
+  }
+
+  static String get sha256Base64Hash {
+    return dotenv.env['SHA256_BASE64'] ?? "";
   }
 }

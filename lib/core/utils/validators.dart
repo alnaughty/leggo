@@ -1,13 +1,17 @@
 class Validators {
   static bool isValidEmail(String? email) {
-    if (email == null) return false;
-    final regex = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$");
+    if (email == null || email.isEmpty) return false;
+    final regex = RegExp(
+      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+    );
+
     return regex.hasMatch(email);
   }
 
-  static bool isValidPhone(String? phone) {
-    if (phone == null) return false;
-    final regex = RegExp(r'^\+?\d{10,15}$');
+  static bool isValidPHPhone(String? phone) {
+    if (phone == null || phone.isEmpty) return false;
+    final regex = RegExp(r'^(\+63|63|0)9\d{9}$');
+
     return regex.hasMatch(phone);
   }
 

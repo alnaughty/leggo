@@ -1,1 +1,1 @@
-class ApiRoutes{}
+class ApiRoutes {}

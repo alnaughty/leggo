@@ -1,16 +1,17 @@
-# leggo
+# Leggo (Mobile)
 
-A new Flutter project.
+Production-ready Flutter app. It works on my machine.
+* **Flutter SDK:** ^3.24.0 (or whatever we're on now)
+* **JDK:** 17 (LTS) - *Required for the Gradle toolchain*
+* **Android SDK:** `C:/Android/Sdk` (Keep it clean, no spaces in the path)
+* **NDK:** `27.3.13750724` (LTS)
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+* to run for dev use 
+flutter run --flavor dev --dart-define=FLAVOR=dev
 
-A few resources to get you started if this is your first Flutter project:
+* for prod
+flutter run --flavor dev --dart-define=FLAVOR=prod
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+* for build release
+flutter build appbundle --flavor prod --dart-define=FLAVOR=prod --obfuscate --split-debug-info=symbols --no-tree-shake-icons
