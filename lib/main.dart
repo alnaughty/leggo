@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:leggo/core/di/injection.dart';
 import 'package:leggo/core/utils/flavors.dart';
 import 'package:leggo/leggo.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -28,5 +28,6 @@ void main() async {
   };
   print("FLAVOR : $flavorString");
   await dotenv.load(fileName: envFile);
-  runApp(ProviderScope(child: const Leggo()));
+  configureDependencies();
+  runApp(const Leggo());
 }

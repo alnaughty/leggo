@@ -1,121 +1,109 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-// ignore: library_prefixes
-import 'package:http/io_client.dart' as httpIO;
+import 'package:dio/dio.dart';
+import 'package:injectable/injectable.dart';
 import 'package:leggo/core/utils/constants.dart';
 import 'package:leggo/core/utils/flavors.dart' show F;
 
+@lazySingleton
 class ApiClient {
-  late final String _baseUrl;
-  late final http.Client _client;
-
+  late final Dio _dio;
   ApiClient() {
-    _baseUrl = F.baseUrl;
-    if (_baseUrl.isEmpty) {
+    final baseUrl = F.baseUrl;
+    if (baseUrl.isEmpty) {
       throw Exception('BASE_DOMAIN not found in .env');
     }
-    _client = _createPinnedClient();
-  }
-  http.Client _createPinnedClient() {
-    final ioClient = HttpClient()
-      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-        return _validateCertificate(cert);
-      };
-
-    return httpIO.IOClient(ioClient);
-  }
-
-  bool _validateCertificate(X509Certificate cert) {
-    final sha256 = base64.encode(cert.der);
-    final expectedSha256 = F.sha256Base64Hash;
-    return sha256 == expectedSha256;
-  }
-
-  Future<Map<String, dynamic>> get(String path, {String? authToken}) async {
-    final response = await _client.get(
-      Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (authToken != null) ...{AppConstants.authHeader: authToken},
-      },
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        headers: {'Content-Type': 'application/json'},
+      ),
     );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw HttpException(
-        'GET $path failed with status ${response.statusCode}',
-      );
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          return handler.next(options);
+        },
+      ),
+    );
+  }
+
+  Options _getOptions(String? authToken) {
+    if (authToken != null) {
+      return Options(headers: {AppConstants.authHeader: authToken});
+    }
+    return Options();
+  }
+
+  /// Performs a GET request.
+  Future<dynamic> get(String path, {String? authToken}) async {
+    try {
+      final response = await _dio.get(path, options: _getOptions(authToken));
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
-  Future<Map<String, dynamic>> post(
+  /// Performs a POST request.
+  Future<dynamic> post(
     String path,
     Map<String, dynamic> body, {
     String? authToken,
   }) async {
-    final response = await _client.post(
-      Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (authToken != null) ...{AppConstants.authHeader: authToken},
-      },
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      return jsonDecode(response.body);
-    } else {
-      throw HttpException(
-        'POST $path failed with status ${response.statusCode}',
+    try {
+      final response = await _dio.post(
+        path,
+        data: body,
+        options: _getOptions(authToken),
       );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
-  Future<Map<String, dynamic>> put(
+  /// Performs a PUT request.
+  Future<dynamic> put(
     String path,
     Map<String, dynamic> body, {
     String? authToken,
   }) async {
-    final response = await _client.put(
-      Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (authToken != null) ...{AppConstants.authHeader: authToken},
-      },
-      body: jsonEncode(body),
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw HttpException(
-        'PUT $path failed with status ${response.statusCode}',
+    try {
+      final response = await _dio.put(
+        path,
+        data: body,
+        options: _getOptions(authToken),
       );
+      return response.data;
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
   }
 
+  /// Performs a DELETE request.
   Future<void> delete(String path, {String? authToken}) async {
-    final response = await _client.delete(
-      Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        if (authToken != null) ...{AppConstants.authHeader: authToken},
-      },
-    );
-
-    if (response.statusCode != 200) {
-      throw HttpException(
-        'DELETE $path failed with status ${response.statusCode}',
-      );
+    try {
+      await _dio.delete(path, options: _getOptions(authToken));
+    } on DioException catch (e) {
+      throw _handleDioError(e);
     }
+  }
+
+  /// Converts [DioException] into a standard [HttpException].
+  Exception _handleDioError(DioException e) {
+    return HttpException(
+      e.message ?? 'Unknown error occurred',
+      statusCode: e.response?.statusCode,
+    );
   }
 }
 
+/// Custom Exception class for API errors.
 class HttpException implements Exception {
   final String message;
-  HttpException(this.message);
+  final int? statusCode;
+  HttpException(this.message, {this.statusCode});
+
   @override
-  String toString() => message;
+  String toString() => 'HttpException: $message (Status: $statusCode)';
 }
